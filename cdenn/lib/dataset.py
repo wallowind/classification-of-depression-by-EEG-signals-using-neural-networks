@@ -12,12 +12,11 @@ class Dataset(torch.nn.Module):
                       'EEG T3-LE', 'EEG C4-LE', 'EEG T4-LE', 'EEG T5-LE', 'EEG Fp1-LE',
                       'EEG F7-LE', 'EEG T6-LE', 'EEG O1-LE', 'EEG Cz-LE'])
     DROP_SUBJ = ["MDD S3 EC.edf", "MDD S30 EC.edf"]
-    PATH = "/home/viktor/Documents/umnik/data"
 
-    def __init__(self, standartize=True, seed=42):
+    def __init__(self, path, standartize=True, fixed_seed=True, seed=42):
         super(Dataset, self).__init__()
         # "EO" - open eyes data and "TASK" - stimuli task data.
-        file_names = [os.path.join(self.PATH, f) for f in sorted(os.listdir(self.PATH)) if "EC" in f]
+        file_names = [os.path.join(path, f) for f in sorted(os.listdir(path)) if "EC" in f]
         normal = [mne.io.read_raw_edf(fn, verbose=0) for fn in file_names if "H" in fn]
         anomal = [mne.io.read_raw_edf(fn, verbose=0) for fn in file_names if "MDD" in fn]
         normal = self._pre_clean(normal)
@@ -37,6 +36,7 @@ class Dataset(torch.nn.Module):
         self.seed = seed
         del normal, anomal
         self._standartized = False
+        self.fixed_seed = fixed_seed
         self.return_mixed = False
         self.set_sample_params(standartize=standartize)
 
@@ -137,9 +137,9 @@ class Dataset(torch.nn.Module):
             self.to(self.device)
         return
 
-    def get_train(self, batched=True, fixed_seed=True):
+    def get_train(self, batched=True):
         idxs = torch.cat([t for i, t in enumerate(self.seg_cv_idxs) if i != self.fold], dim=0)
-        if self.shuffle and fixed_seed:
+        if self.shuffle and self.fixed_seed:
             torch.manual_seed(self.seed)
             idxs = idxs[torch.randperm(idxs.size(0))]
         labels = self.seg_mixed if self.return_mixed else self.seg_labels

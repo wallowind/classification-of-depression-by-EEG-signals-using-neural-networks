@@ -48,14 +48,6 @@ class Dataset(torch.nn.Module):
     def device(self):
         return self._device
 
-    def _switch_standartization(self):
-        if self._standartized:
-            self.data = self.data * self._std + self._means
-            self._standartized = False
-        else:
-            self.data = (self.data - self._means) / self._std
-            self._standartized = True
-
     @property
     def size(self):
         if self._window is None:
@@ -64,6 +56,24 @@ class Dataset(torch.nn.Module):
             idxs = torch.cat([t for i, t in enumerate(self.seg_cv_idxs) if i != self.fold], dim=0)
         bs = self._bs if self._bs > 0 else idxs.size(0)
         return len(idxs.split(bs))
+
+    @property
+    def fold(self):
+        return self._fold
+
+    @fold.setter
+    def fold(self, value):
+        assert (type(value) is int) and (value > -1), "Type/value check failed."
+        assert value <= self._cv, f"{value} is bigger than number of cv-folds [{self._cv}]"
+        self._fold = value
+
+    def _switch_standartization(self):
+        if self._standartized:
+            self.data = self.data * self._std + self._means
+            self._standartized = False
+        else:
+            self.data = (self.data - self._means) / self._std
+            self._standartized = True
 
     def _pre_clean(self, data):
         """ Drops unnecessary channels and subjects. """

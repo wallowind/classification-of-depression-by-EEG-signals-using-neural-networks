@@ -64,7 +64,7 @@ def test_cv(net: torch.nn.Module, ds: Dataset, cv: int, batched=False, pt=True):
 
 def train_cv(cv: int, epochs: int, net: torch.nn.Module, opt: torch.optim.Optimizer, ds: Dataset,
              batched_test=False, lr_shedule=False, pt=True):
-    assert ds._cv == cv, "Messed up cv-fold index."
+    assert ds.fold == cv, "Messed up cv-fold index."
     bar = tqdm.tqdm(range(epochs * ds.size), desc=f"Train[{cv}]")
     loss_fct = torch.nn.CrossEntropyLoss()
     step_lr = opt.param_groups[0]["lr"] / epochs

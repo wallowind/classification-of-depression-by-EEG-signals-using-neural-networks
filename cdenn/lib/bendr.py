@@ -5,8 +5,6 @@
 import copy
 import torch
 
-WEIGHTS_PATH = "/home/viktor/Documents/umnik/report/bendr/"
-
 
 class _Hax(torch.nn.Module):
     def __init__(self):
@@ -143,7 +141,6 @@ class Bendr(torch.nn.Module):
                 torch.nn.Linear(in_features=n_hid, out_features=2, bias=False),
                 torch.nn.GELU())
             for _ in range(6)])
-        self.load(path=WEIGHTS_PATH)
 
     def forward(self, x: torch.Tensor):
         x = self.contextualizer(self.encoder(x))
@@ -158,8 +155,9 @@ class Bendr(torch.nn.Module):
         self.contextualizer.save(path + "contextualizer.pt")
         torch.save(self.predictor.state_dict(), path + "predictor.pt")
 
-    def load(self, path, strict=True, finetuning=True):
-        # self.encoder.load(path + "encoder.pt", strict=strict)
-        self.contextualizer.load(path + "contextualizer.pt", strict=strict)
+    def load(self, path, strict=True, fix_context=False):
+        # self.encoder.load(path, strict=strict)
         # self.encoder.freeze_features()
-        # self.contextualizer.freeze_features()
+        self.contextualizer.load(path, strict=strict)
+        if fix_context:
+            self.contextualizer.freeze_features()

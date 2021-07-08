@@ -5,11 +5,6 @@ import torch
 from cdenn.lib import *
 
 
-DEFAULT_SEED = 42
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-
-
 def trainable_params(net: torch.nn.Module):
     model_parameters = filter(lambda p: p.requires_grad, net.parameters())
     return sum([torch.tensor(p.size()).prod() for p in model_parameters])
@@ -69,6 +64,7 @@ def test_cv(net: torch.nn.Module, ds: Dataset, cv: int, batched=False, pt=True):
 
 def train_cv(cv: int, epochs: int, net: torch.nn.Module, opt: torch.optim.Optimizer, ds: Dataset,
              batched_test=False, lr_shedule=False, pt=True):
+    assert ds._cv == cv, "Messed up cv-fold index."
     bar = tqdm.tqdm(range(epochs * ds.size), desc=f"Train[{cv}]")
     loss_fct = torch.nn.CrossEntropyLoss()
     step_lr = opt.param_groups[0]["lr"] / epochs
@@ -89,13 +85,14 @@ def train_cv(cv: int, epochs: int, net: torch.nn.Module, opt: torch.optim.Optimi
     return net, (l_tr, f1_tr), (l_te, f1_te)
 
 
-def bendr_train(dataset: Dataset, epochs: int, batch_size: int, num_cv: int, seed: int, lr_pretrain=5e-5,
-                fixed_seed=True, lr_rest=1e-3, weight_decay=0, mixed=False, standartize=True, device="cuda:0"):
+def bendr_train(weights: str, dataset: Dataset, epochs: int, net_seed=42,
+                lr_pretrain=5e-5, lr_rest=1e-3, wd=0, lr_shedule=True):
     train_stats, test_stats = list(), list()
-    for i in range(num_cv):
-        torch.manual_seed(DEFAULT_SEED)
+    for i in range(dataset._cv):
+        torch.manual_seed(net_seed)
         net = Bendr()
-        net.to(device)
+        net.load(path=weights, fix_context=False)
+        net.to(dataset.device)
         cont_par, rest_par = list(), list()
         for n, p in net.named_parameters():
             if "contextualizer" in n:
@@ -104,7 +101,9 @@ def bendr_train(dataset: Dataset, epochs: int, batch_size: int, num_cv: int, see
                 rest_par.append(p)
         opt = torch.optim.AdamW([{"params": cont_par, "lr": lr_pretrain}, {"params": rest_par}],
                                 lr=lr_rest, weight_decay=weight_decay)
-        n, tr, te = train_cv(cv=i, epochs=epochs, net=net, opt=opt, ds=dataset, batched_test=True)
+        # annealing lr for pretrain is probably wrong approach, but was done in report
+        n, tr, te = train_cv(cv=i, epochs=epochs, net=net, opt=opt, ds=dataset,
+                             batched_test=True, lr_shedule=lr_shedule)
         train_stats.append(tr)
         test_stats.append(te)
         dataset.fold += 1
@@ -118,13 +117,12 @@ def bendr_train(dataset: Dataset, epochs: int, batch_size: int, num_cv: int, see
     return
 
 
-def main_train(net: torch.nn.Module, dataset: Dataset, epochs: int, batch_size: int, num_cv: int, seed: int,
-               window: int, device="cuda:0", standartize=False, mixed=False, lr=1e-2, wd=1e-2, lr_shedule=False,
-               batched_test=False, fixed_seed=True, pre_train=True):
-    nets = [copy.deepcopy(net) for _ in range(num_cv)]
+def main_train(net: torch.nn.Module, dataset: Dataset, epochs: int, lr=1e-2, wd=1e-2,
+               lr_shedule=False, batched_test=False, pre_train=True):
+    nets = [copy.deepcopy(net) for _ in range(dataset._cv)]
     opts = [torch.optim.AdamW(params=n.parameters(), lr=lr, weight_decay=wd) for n in nets]
     train_stats, test_stats = list(), list()
-    for i in range(num_cv):
+    for i in range(dataset._cv):
         n, tr, te = train_cv(cv=i, epochs=epochs, net=nets[i], opt=opts[i], pt=pre_train,
                              ds=dataset, batched_test=batched_test, lr_shedule=lr_shedule)
         train_stats.append(tr)

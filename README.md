@@ -1,5 +1,5 @@
 # Classification of depression by EEG signals using neural networks
-This code is part of the results of a scientific project: "Development of a neural network approach to recognize early predictors of depression with subsequent diagnosis." The project was supported by the "Umnik" program: * Grant No. 15548GU / 2020 *. Currently the project is terminated without completion at the initiative of the contractor.
+This code is part of the results of a scientific project: ***"Development of a neural network approach to recognize early predictors of depression with subsequent diagnosis."*** The project was supported by the "Umnik" program: ***Grant No. 15548GU / 2020***. Currently the project is terminated without completion at the initiative of the contractor.
 The code is provided "as is" and will not be updated in the future. Some parts of the code were borrowed from other repositories and may have their own license.
 # Results and comments
 The dataset used to evaluate neural networks was downloaded from: https://figshare.com/articles/dataset/EEG_Data_New/4244171.
@@ -12,5 +12,8 @@ Seven architectures have been tested:
  6. **FNet** (fnet.py) is a pseudo-transformer architecture in which attention blocks are replaced by non-parametric Fourier transform blocks. The code was borrowed from: https://github.com/rishikksh20/FNet-pytorch. A very small number of parameters and very high requirements for computing resources. Works great: 0.86 ± 0.04 F1 score - the highest of all networks tested.
  7. **BENDR** (bendr.py) is transformer for processing EEG signals. The code and pretrained weights were borrowed from: https://github.com/SPOClab-ca/BENDR. Results: 0.86 ± 0.05 F1-score. The same as FNet, but this network has almost three orders of magnitude more parameters (more than 157 million versus 130 thousand).
 
-The training code is in train.py and a Google Colaboratory Notebook will be added shortly with instructions on how to reproduce the results achieved.
-
+Google Colaboratory Notebook with all the parameters used to achieve the above results can be found at the link below.
+https://colab.research.google.com/drive/13bIxfjACzd2UQRTzRANy15EC8BRXPIuJ
+# Отчёт о проделанной работе
+Отчёт по первому (и последнему) этапу проекта ***"Разработка нейросетового подхода для распознавания ранних предикторов депрессивных состояний с последующей диагностикой"*** может быть просмотрен по ссылке:
+https://docs.google.com/document/d/1MM4W29L8e4Lj5vzHHKXoZIv37orejmKbVpSRZnSrn2w

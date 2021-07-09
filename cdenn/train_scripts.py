@@ -99,9 +99,8 @@ def bendr_train(weights: str, dataset: Dataset, epochs: int, net_seed=42,
                 cont_par.append(p)
             else:
                 rest_par.append(p)
-        opt = torch.optim.AdamW([{"params": cont_par, "lr": lr_pretrain}, {"params": rest_par}],
+        opt = torch.optim.AdamW([{"params": rest_par}, {"params": cont_par, "lr": lr_pretrain}],
                                 lr=lr_rest, weight_decay=wd)
-        # annealing lr for pretrain is probably wrong approach, but was done in report
         n, tr, te = train_cv(cv=i, epochs=epochs, net=net, opt=opt, ds=dataset,
                              batched_test=True, lr_shedule=lr_shedule)
         train_stats.append(tr)
